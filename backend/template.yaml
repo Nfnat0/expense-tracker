@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 128
+
+Resources:
+  ExpenseTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: 'ExpenseTable'
+      AttributeDefinitions:
+        - AttributeName: 'expenseId'
+          AttributeType: 'S'
+      KeySchema:
+        - AttributeName: 'expenseId'
+          KeyType: 'HASH'
+      BillingMode: 'PAY_PER_REQUEST'
+
+  ExpenseFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: app/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: 'ExpenseTable'
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ExpenseTable
+      Events:
+        ApiRoot:
+          Type: Api
+          Properties:
+            Path: '/'
+            Method: ANY
+        ApiProxy:
+          Type: Api
+          Properties:
+            Path: '/{proxy+}'
+            Method: ANY
